@@ -119,4 +119,3 @@ class CodingAssistant:
             "stdout": completed.stdout.strip(),
             "stderr": completed.stderr.strip(),
         }
-
