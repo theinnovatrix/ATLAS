@@ -57,4 +57,3 @@ class Capability:
     status: str
     risk: RiskLevel = RiskLevel.SAFE
     aliases: tuple[str, ...] = ()
-

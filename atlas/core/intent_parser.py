@@ -104,29 +104,60 @@ def _detect_language(text: str) -> str:
 
 def _extract_args(intent_name: str, text: str) -> dict[str, str | int]:
     """Extract lightweight command arguments for implemented intents."""
-    if intent_name in {"volume_control", "brightness_control"}:
-        number = re.search(r"\b(\d{1,3})\b", text)
-        if number:
-            return {"level": max(0, min(100, int(number.group(1))))}
-        if any(word in text for word in ("up", "increase", "tez", "zyada")):
-            return {"level": 80}
-        if any(word in text for word in ("down", "decrease", "kam", "low")):
-            return {"level": 35}
-    if intent_name == "app_launcher":
-        for prefix in ("open app", "open", "launch", "app kholo"):
-            if prefix in text:
-                return {"app": text.split(prefix, 1)[1].strip() or "terminal"}
-    if intent_name == "calculator":
-        expression = re.sub(r"^(calculate|solve|what is|hisab|kitna)\s+", "", text).strip()
-        return {"expression": expression}
-    if intent_name == "weather_info":
-        city = text
-        for word in ("weather", "mausam", "batao", "ka", "ki"):
-            city = city.replace(word, " ")
-        return {"target": re.sub(r"\s+", " ", city).strip() or "London"}
-    if intent_name in {"web_search", "quick_note", "translate_text"}:
-        query = text
-        for word in ("search", "search karo", "dhundo", "talash", "note", "remember", "translate"):
-            query = query.replace(word, " ")
-        return {"target": re.sub(r"\s+", " ", query).strip()}
+    extractors = {
+        "volume_control": _extract_level,
+        "brightness_control": _extract_level,
+        "app_launcher": _extract_app,
+        "calculator": _extract_expression,
+        "weather_info": _extract_weather_target,
+        "web_search": _extract_text_target,
+        "quick_note": _extract_text_target,
+        "translate_text": _extract_text_target,
+    }
+    extractor = extractors.get(intent_name)
+    return extractor(text) if extractor else {}
+
+
+def _extract_level(text: str) -> dict[str, int]:
+    """Extract a percentage level."""
+    number = re.search(r"\b(\d{1,3})\b", text)
+    if number:
+        return {"level": max(0, min(100, int(number.group(1))))}
+    if any(word in text for word in ("up", "increase", "tez", "zyada")):
+        return {"level": 80}
+    if any(word in text for word in ("down", "decrease", "kam", "low")):
+        return {"level": 35}
     return {}
+
+
+def _extract_app(text: str) -> dict[str, str]:
+    """Extract an app name."""
+    for prefix in ("open app", "open", "launch", "app kholo"):
+        if prefix in text:
+            return {"app": text.split(prefix, 1)[1].strip() or "terminal"}
+    return {}
+
+
+def _extract_expression(text: str) -> dict[str, str]:
+    """Extract a calculator expression."""
+    expression = re.sub(r"^(calculate|solve|what is|hisab|kitna)\s+", "", text).strip()
+    return {"expression": expression}
+
+
+def _extract_weather_target(text: str) -> dict[str, str]:
+    """Extract a city from a weather command."""
+    return {"target": _strip_words(text, ("weather", "mausam", "batao", "ka", "ki")) or "London"}
+
+
+def _extract_text_target(text: str) -> dict[str, str]:
+    """Extract a free-form text target."""
+    words = ("search", "search karo", "dhundo", "talash", "note", "remember", "translate")
+    return {"target": _strip_words(text, words)}
+
+
+def _strip_words(text: str, words: tuple[str, ...]) -> str:
+    """Remove command words and normalize whitespace."""
+    cleaned = text
+    for word in words:
+        cleaned = cleaned.replace(word, " ")
+    return re.sub(r"\s+", " ", cleaned).strip()

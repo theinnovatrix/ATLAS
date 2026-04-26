@@ -6,4 +6,6 @@ __pycache__/
 .coverage
 htmlcov/
 .venv/
+.ci-venv/
+*.egg-info/
 atlas_debug.log

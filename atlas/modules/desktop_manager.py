@@ -10,7 +10,6 @@ Last Updated: 2026-04-26
 from __future__ import annotations
 
 from pathlib import Path
-import shutil
 import time
 import zipfile
 
@@ -107,4 +106,3 @@ def _human_bytes(value: int) -> str:
             return f"{amount:.2f} {unit}"
         amount /= 1024
     return f"{amount:.2f} TB"
-
