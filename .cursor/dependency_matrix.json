@@ -1,0 +1,203 @@
+{
+  "project": "NOVA Voice Assistant",
+  "generated_on": "2026-04-26",
+  "python": {
+    "required_version": ">=3.10",
+    "detected_version": "3.12.3",
+    "status": "compatible"
+  },
+  "modules": {
+    "core.intent_parser": {
+      "purpose": "Classify natural-language commands and route them to capabilities.",
+      "python_packages": [
+        "pydantic",
+        "rapidfuzz",
+        "openai"
+      ],
+      "system_packages": [],
+      "api_keys": [
+        "OPENAI_API_KEY"
+      ],
+      "notes": "LLM provider should be injectable so offline and mocked tests can run without credentials."
+    },
+    "modules.audio_processor": {
+      "purpose": "Record microphone input, buffer audio, and transcribe speech.",
+      "python_packages": [
+        "faster-whisper",
+        "numpy",
+        "pyaudio",
+        "soundfile"
+      ],
+      "system_packages": [
+        "ffmpeg",
+        "portaudio19-dev",
+        "alsa-utils",
+        "pulseaudio-utils"
+      ],
+      "api_keys": [],
+      "notes": "PyAudio requires PortAudio headers at install time."
+    },
+    "modules.wake_word": {
+      "purpose": "Detect NOVA wake phrase before recording full commands.",
+      "python_packages": [
+        "pvporcupine",
+        "pyaudio"
+      ],
+      "system_packages": [
+        "portaudio19-dev"
+      ],
+      "api_keys": [
+        "PICOVOICE_ACCESS_KEY"
+      ],
+      "notes": "A fully offline fallback should be considered if Picovoice access is unavailable."
+    },
+    "modules.voice_engine": {
+      "purpose": "Generate and play spoken responses.",
+      "python_packages": [
+        "elevenlabs",
+        "pydub",
+        "sounddevice"
+      ],
+      "system_packages": [
+        "ffmpeg",
+        "pulseaudio-utils"
+      ],
+      "api_keys": [
+        "ELEVENLABS_API_KEY"
+      ],
+      "notes": "Support Piper as an offline provider to avoid hard dependency on external TTS."
+    },
+    "modules.system_control": {
+      "purpose": "Control volume, brightness, applications, power, and desktop settings.",
+      "python_packages": [
+        "dbus-next",
+        "psutil"
+      ],
+      "system_packages": [
+        "alsa-utils",
+        "brightnessctl",
+        "wmctrl",
+        "xdotool",
+        "dbus-x11"
+      ],
+      "api_keys": [],
+      "notes": "Commands must be allowlisted and validated before execution."
+    },
+    "modules.file_manager": {
+      "purpose": "Open, search, copy, move, rename, and delete files through safe commands.",
+      "python_packages": [
+        "send2trash",
+        "watchdog"
+      ],
+      "system_packages": [
+        "xdg-utils"
+      ],
+      "api_keys": [],
+      "notes": "Destructive operations should use trash or require explicit confirmation from higher-level policy."
+    },
+    "modules.web_media": {
+      "purpose": "Weather, news, stocks, search, media lookup, and webpage retrieval.",
+      "python_packages": [
+        "httpx",
+        "beautifulsoup4",
+        "feedparser",
+        "yfinance",
+        "trafilatura"
+      ],
+      "system_packages": [],
+      "api_keys": [
+        "NEWS_API_KEY",
+        "SERPAPI_API_KEY"
+      ],
+      "notes": "Scraping must respect robots.txt, site terms, auth boundaries, and rate limits."
+    },
+    "modules.browser_automation": {
+      "purpose": "Interact with websites for permitted automation tasks.",
+      "python_packages": [
+        "playwright"
+      ],
+      "system_packages": [
+        "libnss3",
+        "libatk-bridge2.0-0",
+        "libgtk-3-0"
+      ],
+      "api_keys": [],
+      "notes": "Use official APIs for Instagram, Facebook, and YouTube where available; do not bypass login, access controls, or platform protections."
+    },
+    "modules.coding_assistant": {
+      "purpose": "Assist with code search, explanation, generation, and command execution.",
+      "python_packages": [
+        "GitPython",
+        "tree-sitter"
+      ],
+      "system_packages": [
+        "git",
+        "ripgrep"
+      ],
+      "api_keys": [
+        "OPENAI_API_KEY"
+      ],
+      "notes": "Shell execution must use policy checks and audit logs."
+    },
+    "gui.main_window": {
+      "purpose": "PyQt6 desktop UI with chat, microphone controls, and status indicators.",
+      "python_packages": [
+        "PyQt6"
+      ],
+      "system_packages": [
+        "libxcb-cursor0"
+      ],
+      "api_keys": [],
+      "notes": "Long-running voice and API work must run off the UI thread."
+    },
+    "deployment": {
+      "purpose": "Installable Linux service and distributable package.",
+      "python_packages": [
+        "pyinstaller"
+      ],
+      "system_packages": [
+        "systemd",
+        "desktop-file-utils"
+      ],
+      "api_keys": [],
+      "notes": "Systemd user service is safer than root service for desktop assistant features."
+    },
+    "quality": {
+      "purpose": "Formatting, linting, typing, tests, coverage, and security checks.",
+      "python_packages": [
+        "pytest",
+        "pytest-cov",
+        "pytest-qt",
+        "pytest-mock",
+        "black",
+        "ruff",
+        "mypy",
+        "bandit"
+      ],
+      "system_packages": [],
+      "api_keys": [],
+      "notes": "Ruff can cover many flake8 and pylint-style checks with faster feedback."
+    }
+  },
+  "currently_installed_relevant_packages": {
+    "numpy": "2.4.4",
+    "requests": "2.33.1",
+    "dbus-python": "1.3.2",
+    "PyGObject": "3.48.2"
+  },
+  "missing_critical_packages": [
+    "beautifulsoup4",
+    "black",
+    "dbus-next",
+    "elevenlabs",
+    "faster-whisper",
+    "httpx",
+    "mypy",
+    "playwright",
+    "pyaudio",
+    "pytest",
+    "pytest-cov",
+    "PyQt6",
+    "ruff"
+  ]
+}
