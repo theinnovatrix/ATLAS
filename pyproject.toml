@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "atlas-assistant"
+version = "0.1.0"
+description = "Atlas local-first Linux desktop cognitive assistant foundation."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+voice = [
+  "faster-whisper",
+  "soundfile",
+  "pyttsx3",
+  "edge-tts",
+  "elevenlabs",
+]
+gui = ["PyQt6"]
+web = ["requests", "beautifulsoup4", "yfinance"]
+dev = ["pytest", "pytest-cov", "ruff", "mypy", "bandit"]
+
+[project.scripts]
+atlas = "atlas.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["atlas*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
