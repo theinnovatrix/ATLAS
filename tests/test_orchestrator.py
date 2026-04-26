@@ -1,0 +1,39 @@
+from atlas.core.orchestrator import AtlasOrchestrator
+from atlas.core.safety import CONFIRMATION_TOKEN
+
+
+def test_system_info_command_returns_data():
+    response = AtlasOrchestrator().execute_text("system info")
+    assert response.ok is True
+    assert "python" in response.data
+
+
+def test_calculator_command_executes_safely():
+    response = AtlasOrchestrator().execute_text("calculate 2 + 2 * 3")
+    assert response.ok is True
+    assert response.message == "2 + 2 * 3 = 8"
+
+
+def test_hindi_weather_command_uses_city_argument():
+    response = AtlasOrchestrator().execute_text("mausam Delhi")
+    assert response.intent == "weather_info"
+    assert response.data["city"] == "delhi"
+
+
+def test_confirmable_volume_is_blocked_without_token():
+    response = AtlasOrchestrator().execute_text("volume 30")
+    assert response.ok is False
+    assert response.requires_confirmation is True
+
+
+def test_confirmable_volume_reaches_handler_with_token():
+    response = AtlasOrchestrator().execute_text("volume 30", CONFIRMATION_TOKEN)
+    assert response.intent == "volume_control"
+    assert "command" in response.data
+
+
+def test_capabilities_lists_registered_features():
+    response = AtlasOrchestrator().execute_text("what can you do")
+    assert response.ok is True
+    assert response.data["registered"] >= 100
+    assert response.data["implemented"] >= 20
