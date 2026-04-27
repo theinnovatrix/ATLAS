@@ -30,6 +30,8 @@ def test_confirmable_volume_reaches_handler_with_token():
     response = AtlasOrchestrator().execute_text("volume 30", CONFIRMATION_TOKEN)
     assert response.intent == "volume_control"
     assert "command" in response.data
+    assert response.data["executed"] in {True, False}
+    assert response.requires_confirmation is False
 
 
 def test_capabilities_lists_registered_features():

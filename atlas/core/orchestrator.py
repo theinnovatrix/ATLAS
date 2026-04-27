@@ -123,6 +123,15 @@ class AtlasOrchestrator:
                 },
                 requires_confirmation=safety.requires_confirmation,
             )
+        if confirmation_token is not None:
+            intent = Intent(
+                name=intent.name,
+                category=intent.category,
+                confidence=intent.confidence,
+                language=intent.language,
+                args={**intent.args, "confirmed": True},
+                raw_text=intent.raw_text,
+            )
 
         handler = self.handlers.get(intent.name)
         if handler is None:
