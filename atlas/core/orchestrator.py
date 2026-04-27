@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from atlas.capabilities import CAPABILITIES, Capability, capability_by_name, implemented_capabilities
+from atlas.core.ai_brain import FreeFirstBrain
 from atlas.core.config import AtlasSettings, default_settings
 from atlas.core.intent_parser import IntentParser
 from atlas.core.safety import SafetyPolicy
@@ -38,6 +39,7 @@ class AtlasOrchestrator:
         """Initialize module handlers."""
         self.settings = settings or default_settings()
         self.parser = IntentParser()
+        self.brain = FreeFirstBrain(settings=self.settings)
         self.safety = safety or SafetyPolicy()
         self.system = SystemControl()
         self.desktop = DesktopManager()
@@ -112,7 +114,12 @@ class AtlasOrchestrator:
 
     def execute_text(self, text: str, confirmation_token: str | None = None) -> AssistantResponse:
         """Parse and execute a natural-language command."""
-        return self.execute_intent(self.parser.parse(text), confirmation_token)
+        intent = self.parser.parse(text)
+        if intent.name == "unknown":
+            planned = self.brain.plan(text)
+            if planned is not None:
+                intent = planned
+        return self.execute_intent(intent, confirmation_token)
 
     def execute_intent(
         self, intent: Intent, confirmation_token: str | None = None
