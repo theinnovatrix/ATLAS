@@ -277,6 +277,44 @@ python -m atlas.cli "make the moon blue" --json
 Milestone 3 improves intent parsing, slot extraction, unknown-command
 suggestions, and confirmation metadata. See `docs/ATLAS_MILESTONE_3.md`.
 
+## Updating an existing laptop install to Milestone 4
+
+Use this after Milestone 3 is working.
+
+### Step 1: Get the latest Milestone 4 branch
+
+```bash
+cd ~/ATLAS
+git fetch origin
+git checkout Atlasmilestone-4-system-control-0f22
+git pull origin Atlasmilestone-4-system-control-0f22
+```
+
+Use `git pull origin main` only after the Milestone 4 PR has been merged into
+`main`.
+
+### Step 2: Reinstall and run system-control tests
+
+```bash
+source .venv/bin/activate
+python -m pip install -e .
+python -m pip install -r requirements-dev.txt
+python -m pytest tests/test_system_control.py -q
+```
+
+### Step 3: Try Milestone 4 system commands
+
+```bash
+python -m atlas.cli "system diagnostics" --json
+python -m atlas.cli "notify Atlas hello"
+python -m atlas.cli "screenshot" --json
+python -m atlas.cli "lock screen" --json
+python -m atlas.cli "service ssh status" --json
+```
+
+Milestone 4 prepares and validates Linux system commands. Commands that change
+your system still require `--confirm`. See `docs/ATLAS_MILESTONE_4.md`.
+
 ## Optional providers
 
 Atlas works without paid keys for the current milestone. Later upgrades can use:

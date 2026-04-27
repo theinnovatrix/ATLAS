@@ -31,6 +31,23 @@ class IntentParser:
         ("app_launcher", "system", "en", ("open app", "launch", "open firefox", "open terminal")),
         ("app_launcher", "system", "hi", ("app kholo", "firefox kholo", "terminal kholo")),
         ("app_launcher", "system", "ur", ("app kholo", "firefox kholo", "terminal kholo")),
+        ("file_opener", "system", "en", ("open file", "open folder", "open path")),
+        ("file_opener", "system", "hi", ("file kholo", "folder kholo")),
+        ("file_opener", "system", "ur", ("file kholo", "folder kholo")),
+        (
+            "system_diagnostics",
+            "system",
+            "en",
+            ("system diagnostics", "system dependencies", "dependency check", "check tools"),
+        ),
+        ("system_diagnostics", "system", "hi", ("system diagnostics", "tools check")),
+        ("system_diagnostics", "system", "ur", ("system diagnostics", "tools check")),
+        ("notifications", "system", "en", ("notify", "notification", "send notification")),
+        ("notifications", "system", "hi", ("notification bhejo", "notify")),
+        ("notifications", "system", "ur", ("notification bhejo", "notify")),
+        ("screenshot", "system", "en", ("screenshot", "screen shot")),
+        ("lock_screen", "system", "en", ("lock screen", "lock pc", "lock computer")),
+        ("service_status", "system", "en", ("service status", "system service", "service")),
         ("calculator", "productivity", "en", ("calculate", "what is", "solve")),
         ("calculator", "productivity", "hi", ("hisab", "calculate", "kitna")),
         ("calculator", "productivity", "ur", ("hisab", "calculate", "kitna")),
@@ -126,6 +143,9 @@ def _extract_args(intent_name: str, text: str) -> dict[str, str | int]:
         "volume_control": _extract_level,
         "brightness_control": _extract_level,
         "app_launcher": _extract_app,
+        "file_opener": _extract_path_target,
+        "notifications": _extract_notification_target,
+        "service_status": _extract_service_target,
         "calculator": _extract_expression,
         "weather_info": _extract_weather_target,
         "web_search": _extract_text_target,
@@ -159,6 +179,26 @@ def _extract_app(text: str) -> dict[str, str]:
         if prefix in text:
             return {"app": text.split(prefix, 1)[1].strip() or "terminal"}
     return {}
+
+
+def _extract_path_target(text: str) -> dict[str, str]:
+    """Extract a file or folder path."""
+    return {"path": _strip_prefix(text, ("open file", "open folder", "open path", "file kholo", "folder kholo"))}
+
+
+def _extract_notification_target(text: str) -> dict[str, str]:
+    """Extract notification text."""
+    target = _strip_prefix(text, ("send notification", "notification", "notify", "notification bhejo"))
+    return {"target": target or "Atlas notification"}
+
+
+def _extract_service_target(text: str) -> dict[str, str]:
+    """Extract a systemd service name."""
+    if text.startswith("service ") and text.endswith(" status"):
+        target = text.removeprefix("service ").removesuffix(" status").strip()
+        return {"target": target or "ssh"}
+    target = _strip_prefix(text, ("service status", "system service", "service"))
+    return {"target": target or "ssh"}
 
 
 def _extract_expression(text: str) -> dict[str, str]:
@@ -216,6 +256,14 @@ def _strip_words(text: str, words: tuple[str, ...]) -> str:
     for word in words:
         cleaned = cleaned.replace(word, " ")
     return re.sub(r"\s+", " ", cleaned).strip()
+
+
+def _strip_prefix(text: str, prefixes: tuple[str, ...]) -> str:
+    """Remove a command prefix without modifying the rest of the target."""
+    for prefix in prefixes:
+        if text.startswith(prefix):
+            return text[len(prefix):].strip()
+    return text.strip()
 
 
 def _extract_prefixed_target(text: str) -> dict[str, str]:

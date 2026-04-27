@@ -44,3 +44,11 @@ def test_voice_status_command_reports_diagnostics():
     assert response.ok is True
     assert response.intent == "voice_status"
     assert "audio" in response.data
+
+
+def test_system_dependencies_route_is_available():
+    response = AtlasOrchestrator().execute_text("system dependencies")
+
+    assert response.ok is True
+    assert response.intent == "system_diagnostics"
+    assert "amixer" in response.data["commands"]
