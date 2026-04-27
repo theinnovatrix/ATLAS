@@ -36,3 +36,9 @@ def test_pyqt_availability_probe_returns_boolean() -> None:
 
 def test_gui_console_entrypoint_imports() -> None:
     assert callable(main)
+
+
+def test_controller_transcript_text_uses_atlas_branding() -> None:
+    controller = AtlasGuiController()
+
+    assert controller.transcript_text().startswith("Atlas:")

@@ -8,8 +8,8 @@ dependencies.
 
 - `AtlasGuiController` for command execution, transcript tracking, and status
   updates.
-- Lazy PyQt6 main window with chat transcript, command input, send button,
-  quick command buttons, and status label.
+- Lazy PyQt6 main window with a futuristic dark dashboard, command rail,
+  status cards, chat transcript, command input, send button, and quick actions.
 - `atlas-gui` console entry point.
 - Graceful message when PyQt6 is not installed.
 - Tests for controller behavior and GUI fallback.
@@ -27,4 +27,4 @@ If PyQt6 is not installed, Atlas prints setup instructions instead of crashing.
 
 - Add worker threads for long-running commands.
 - Add settings and API-key panels.
-- Add activity log and tray integration.
+- Add animated status/audio indicators and tray integration.

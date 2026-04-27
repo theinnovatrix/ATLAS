@@ -429,9 +429,10 @@ python -m pip install ".[gui]"
 atlas-gui
 ```
 
-If PyQt6 is not installed, `atlas-gui` prints an install message instead of
-crashing. The GUI runs text commands through the same Atlas orchestrator as the
-CLI. See `docs/ATLAS_MILESTONE_7.md`.
+The GUI is now styled as a dark futuristic Atlas dashboard with status cards,
+quick actions, and a neon command console. If PyQt6 is not installed, `atlas-gui`
+prints an install message instead of crashing. The GUI runs text commands through
+the same Atlas orchestrator as the CLI. See `docs/ATLAS_MILESTONE_7.md`.
 
 ## Optional providers
 
