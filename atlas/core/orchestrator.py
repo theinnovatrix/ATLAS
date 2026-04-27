@@ -13,7 +13,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from atlas.capabilities import CAPABILITIES, capability_by_name, implemented_capabilities
+from atlas.capabilities import CAPABILITIES, Capability, capability_by_name, implemented_capabilities
 from atlas.core.config import AtlasSettings, default_settings
 from atlas.core.intent_parser import IntentParser
 from atlas.core.safety import SafetyPolicy
@@ -104,7 +104,7 @@ class AtlasOrchestrator:
         """Execute a parsed intent."""
         capability = capability_by_name(intent.name)
         if capability is None:
-            return AssistantResponse(False, "Atlas does not know that capability yet.", intent.name)
+            return self._unknown_response(intent)
 
         safety = self.safety.evaluate(capability, confirmation_token)
         if not safety.allowed:
@@ -113,6 +113,10 @@ class AtlasOrchestrator:
                 safety.message,
                 intent.name,
                 capability.risk,
+                data={
+                    "confirmation_token": "CONFIRM_ATLAS_ACTION",
+                    "confirmation_flag": "--confirm",
+                },
                 requires_confirmation=safety.requires_confirmation,
             )
 
@@ -340,9 +344,33 @@ class AtlasOrchestrator:
             },
         )
 
+    def _unknown_response(self, intent: Intent) -> AssistantResponse:
+        suggestions = _suggest_capabilities(intent.raw_text)
+        hint = ", ".join(suggestions[:3]) if suggestions else "what can you do"
+        return AssistantResponse(
+            False,
+            f"Atlas does not understand that command yet. Try: {hint}",
+            intent.name,
+            RiskLevel.UNSUPPORTED,
+            data={"suggestions": suggestions},
+        )
+
     def _message(
         self, intent: Intent, message: str, data: dict[str, Any] | None = None
     ) -> AssistantResponse:
         capability = capability_by_name(intent.name)
         risk = capability.risk if capability else RiskLevel.SAFE
         return AssistantResponse(True, message, intent.name, risk, data or {})
+
+
+def _suggest_capabilities(raw_text: str) -> list[str]:
+    """Return simple capability suggestions for an unknown command."""
+    normalized = raw_text.casefold()
+    scored: list[tuple[int, Capability]] = []
+    for capability in CAPABILITIES:
+        haystack = f"{capability.name} {capability.category} {capability.summary}".casefold()
+        score = sum(1 for token in normalized.split() if len(token) > 2 and token in haystack)
+        if score:
+            scored.append((score, capability))
+    scored.sort(key=lambda item: (-item[0], item[1].name))
+    return [capability.name for _, capability in scored[:5]]
