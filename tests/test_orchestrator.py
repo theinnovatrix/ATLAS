@@ -30,6 +30,8 @@ def test_confirmable_volume_reaches_handler_with_token():
     response = AtlasOrchestrator().execute_text("volume 30", CONFIRMATION_TOKEN)
     assert response.intent == "volume_control"
     assert "command" in response.data
+    assert response.data["executed"] in {True, False}
+    assert response.requires_confirmation is False
 
 
 def test_capabilities_lists_registered_features():
@@ -44,3 +46,11 @@ def test_voice_status_command_reports_diagnostics():
     assert response.ok is True
     assert response.intent == "voice_status"
     assert "audio" in response.data
+
+
+def test_system_dependencies_route_is_available():
+    response = AtlasOrchestrator().execute_text("system dependencies")
+
+    assert response.ok is True
+    assert response.intent == "system_diagnostics"
+    assert "amixer" in response.data["commands"]

@@ -64,3 +64,12 @@ def test_parse_todo_timer_and_dictionary_aliases() -> None:
     assert parser.parse("todo buy milk").name == "todo_list"
     assert parser.parse("timer 12").args["minutes"] == 12
     assert parser.parse("define atlas").args["target"] == "atlas"
+
+
+def test_parse_system_control_aliases() -> None:
+    parser = IntentParser()
+
+    assert parser.parse("notify hello").name == "notifications"
+    assert parser.parse("take screenshot").name == "screenshot"
+    assert parser.parse("lock screen").name == "lock_screen"
+    assert parser.parse("service ssh status").args["target"] == "ssh"

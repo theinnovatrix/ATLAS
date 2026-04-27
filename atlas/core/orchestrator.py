@@ -48,12 +48,16 @@ class AtlasOrchestrator:
         self.voice = VoiceEngine(self.settings)
         self.handlers: dict[str, Callable[[Intent], AssistantResponse]] = {
             "system_info": self._system_info,
+            "system_diagnostics": self._system_diagnostics,
+            "service_status": self._service_status,
             "volume_control": self._volume_control,
             "brightness_control": self._brightness_control,
             "pc_temp_check": self._temperature,
             "app_launcher": self._launch_app,
             "file_opener": self._open_file,
             "screenshot": self._screenshot,
+            "notifications": self._notification,
+            "lock_screen": self._lock_screen,
             "quick_search": self._quick_search,
             "folder_maker": self._folder_maker,
             "quick_note": self._quick_note,
@@ -119,6 +123,15 @@ class AtlasOrchestrator:
                 },
                 requires_confirmation=safety.requires_confirmation,
             )
+        if confirmation_token is not None:
+            intent = Intent(
+                name=intent.name,
+                category=intent.category,
+                confidence=intent.confidence,
+                language=intent.language,
+                args={**intent.args, "confirmed": True},
+                raw_text=intent.raw_text,
+            )
 
         handler = self.handlers.get(intent.name)
         if handler is None:
@@ -137,6 +150,12 @@ class AtlasOrchestrator:
     def _system_info(self, intent: Intent) -> AssistantResponse:
         return self.system.system_info(intent)
 
+    def _system_diagnostics(self, intent: Intent) -> AssistantResponse:
+        return self.system.diagnostics(intent)
+
+    def _service_status(self, intent: Intent) -> AssistantResponse:
+        return self.system.service_status(intent)
+
     def _volume_control(self, intent: Intent) -> AssistantResponse:
         return self.system.volume(intent)
 
@@ -153,7 +172,13 @@ class AtlasOrchestrator:
         return self.system.open_path(intent)
 
     def _screenshot(self, intent: Intent) -> AssistantResponse:
-        return self._message(intent, "Screenshot requires the desktop screenshot backend in the GUI milestone.")
+        return self.system.screenshot(intent)
+
+    def _notification(self, intent: Intent) -> AssistantResponse:
+        return self.system.notify(intent)
+
+    def _lock_screen(self, intent: Intent) -> AssistantResponse:
+        return self.system.lock_screen(intent)
 
     def _quick_search(self, intent: Intent) -> AssistantResponse:
         data = self.desktop.quick_search(str(intent.args.get("target", "")))
