@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 import math
 import operator
+from pathlib import Path
 import time
 from typing import Callable
 
@@ -66,6 +67,8 @@ class ProductivityTools:
     """Provide local productivity capabilities."""
 
     todos: list[str] = field(default_factory=list)
+    workspace: Path = field(default_factory=lambda: Path.home() / ".atlas")
+    todo_path: Path | None = None
 
     def calculate(self, expression: str) -> str:
         """Safely evaluate a math expression."""
@@ -113,14 +116,21 @@ class ProductivityTools:
 
     def add_todo(self, text: str) -> str:
         """Add a task to the in-memory todo list."""
-        self.todos.append(text)
-        return f"Added todo: {text}"
+        cleaned = text.strip()
+        if not cleaned:
+            return "Tell Atlas what todo to add."
+        self.todos.append(cleaned)
+        self._todo_file().parent.mkdir(parents=True, exist_ok=True)
+        with self._todo_file().open("a", encoding="utf-8") as todo_file:
+            todo_file.write(cleaned + "\n")
+        return f"Added todo: {cleaned}"
 
     def list_todos(self) -> str:
         """Return current in-memory todos."""
-        if not self.todos:
+        todos = self._load_todos()
+        if not todos:
             return "No todos yet."
-        return "; ".join(f"{index + 1}. {item}" for index, item in enumerate(self.todos))
+        return "; ".join(f"{index + 1}. {item}" for index, item in enumerate(todos))
 
     def todo(self, text: str) -> str:
         """Add or list todos based on command text."""
@@ -146,3 +156,38 @@ class ProductivityTools:
     def pomodoro(self, minutes: int = 25) -> str:
         """Return a Pomodoro focus session plan."""
         return f"Pomodoro started: focus for {minutes} minutes, then take a 5 minute break."
+
+    def save_note(self, title: str, body: str = "") -> dict[str, str]:
+        """Persist a local markdown note under the Atlas workspace."""
+        safe_title = _safe_slug(title or "note")
+        notes_dir = self.workspace / "notes"
+        notes_dir.mkdir(parents=True, exist_ok=True)
+        note_path = notes_dir / f"{datetime.now():%Y%m%d_%H%M%S}_{safe_title}.md"
+        content = body.strip() or title.strip()
+        note_path.write_text(content + "\n", encoding="utf-8")
+        return {"path": str(note_path), "title": title.strip() or "note"}
+
+    def _todo_file(self) -> Path:
+        """Return the persistent todo file path."""
+        if self.todo_path is not None:
+            return self.todo_path
+        return self.workspace / "todos.txt"
+
+    def _load_todos(self) -> list[str]:
+        """Load persisted and in-memory todos."""
+        persisted: list[str] = []
+        try:
+            persisted = [
+                line.strip()
+                for line in self._todo_file().read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+        except FileNotFoundError:
+            persisted = []
+        return [*persisted, *[todo for todo in self.todos if todo not in persisted]]
+
+
+def _safe_slug(value: str) -> str:
+    """Return a conservative filename slug."""
+    cleaned = "".join(char.lower() if char.isalnum() else "-" for char in value.strip())
+    return "-".join(part for part in cleaned.split("-") if part)[:60] or "note"

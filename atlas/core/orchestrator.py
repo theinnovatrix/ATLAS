@@ -62,10 +62,14 @@ class AtlasOrchestrator:
             "folder_maker": self._folder_maker,
             "quick_note": self._quick_note,
             "folder_size": self._folder_size,
+            "copy_path": self._copy_path,
+            "zip_files": self._zip_files,
+            "unzip_files": self._unzip_files,
             "downloads_folder": self._downloads_folder,
             "go_home": self._go_home,
             "calendar_view": self._calendar_view,
             "timer": self._timer,
+            "pomodoro_timer": self._pomodoro,
             "calculator": self._calculator,
             "unit_converter": self._unit_converter,
             "translate_text": self._translate,
@@ -90,6 +94,10 @@ class AtlasOrchestrator:
             "makeup_tips": self._makeup,
             "api_tester": self._api_test,
             "explain_code": self._explain_code,
+            "git_status": self._git_status,
+            "git_diff": self._git_diff,
+            "json_validator": self._json_validator,
+            "safe_shell": self._safe_shell,
             "read_docs": self._read_docs,
             "write_docs": self._write_docs,
             "ai_coder": self._ai_coder,
@@ -198,6 +206,24 @@ class AtlasOrchestrator:
         data = self.desktop.folder_size(str(intent.args.get("target", ".")))
         return AssistantResponse(True, f"Folder size: {data['human']}", intent.name, data=data)
 
+    def _copy_path(self, intent: Intent) -> AssistantResponse:
+        path = self.desktop.copy_path(str(intent.args.get("target", ".")))
+        return AssistantResponse(True, f"Resolved path: {path}", intent.name, data={"path": path})
+
+    def _zip_files(self, intent: Intent) -> AssistantResponse:
+        try:
+            message = self.desktop.zip_files(str(intent.args.get("target", "")))
+        except (FileNotFoundError, OSError, ValueError) as error:
+            return AssistantResponse(False, str(error), intent.name)
+        return self._message(intent, message)
+
+    def _unzip_files(self, intent: Intent) -> AssistantResponse:
+        try:
+            message = self.desktop.unzip_files(str(intent.args.get("target", "")))
+        except (FileNotFoundError, OSError, ValueError) as error:
+            return AssistantResponse(False, str(error), intent.name)
+        return self._message(intent, message)
+
     def _downloads_folder(self, intent: Intent) -> AssistantResponse:
         return self._message(intent, f"Downloads folder: {self.desktop.downloads_folder()}")
 
@@ -210,6 +236,10 @@ class AtlasOrchestrator:
     def _timer(self, intent: Intent) -> AssistantResponse:
         minutes = int(intent.args.get("minutes", 5))
         return self._message(intent, self.productivity.timer(minutes))
+
+    def _pomodoro(self, intent: Intent) -> AssistantResponse:
+        minutes = int(intent.args.get("minutes", 25))
+        return self._message(intent, self.productivity.pomodoro(minutes))
 
     def _calculator(self, intent: Intent) -> AssistantResponse:
         return self._message(intent, self.productivity.calculate(str(intent.args.get("expression", ""))))
@@ -294,6 +324,22 @@ class AtlasOrchestrator:
 
     def _explain_code(self, intent: Intent) -> AssistantResponse:
         return self._message(intent, self.coding.explain_code(str(intent.args.get("target", ""))))
+
+    def _git_status(self, intent: Intent) -> AssistantResponse:
+        data = self.coding.git_status(str(intent.args.get("target", ".")))
+        return AssistantResponse(bool(data.get("ok")), "Git status checked.", intent.name, data=data)
+
+    def _git_diff(self, intent: Intent) -> AssistantResponse:
+        data = self.coding.git_diff_summary(str(intent.args.get("target", ".")))
+        return AssistantResponse(bool(data.get("ok")), "Git diff checked.", intent.name, data=data)
+
+    def _json_validator(self, intent: Intent) -> AssistantResponse:
+        message = self.coding.validate_json(str(intent.args.get("target", "")))
+        return self._message(intent, message)
+
+    def _safe_shell(self, intent: Intent) -> AssistantResponse:
+        data = self.coding.shell_suggestion(str(intent.args.get("target", "")))
+        return AssistantResponse(True, "Safe shell suggestion ready.", intent.name, data=data)
 
     def _read_docs(self, intent: Intent) -> AssistantResponse:
         return self._message(intent, self.coding.read_docs(Path(str(intent.args.get("target", "README.md")))))

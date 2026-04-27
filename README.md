@@ -354,6 +354,44 @@ Milestone 5 uses public/free defaults and official API upgrade slots. It does
 not bypass login walls, private backends, or social-platform controls. See
 `docs/ATLAS_MILESTONE_5.md`.
 
+## Updating an existing laptop install to Milestone 6
+
+Use this after Milestone 5 is working.
+
+### Step 1: Get the latest Milestone 6 branch
+
+```bash
+cd ~/ATLAS
+git fetch origin
+git checkout Atlasmilestone-6-productivity-coding-0f22
+git pull origin Atlasmilestone-6-productivity-coding-0f22
+```
+
+Use `git pull origin main` only after the Milestone 6 PR has been merged into
+`main`.
+
+### Step 2: Reinstall and run productivity/coding tests
+
+```bash
+source .venv/bin/activate
+python -m pip install -e .
+python -m pip install -r requirements-dev.txt
+python -m pytest tests/test_productivity_coding.py -q
+```
+
+### Step 3: Try Milestone 6 local commands
+
+```bash
+python -m atlas.cli "make folder /tmp/atlas-demo"
+python -m atlas.cli "note remember to test milestone six"
+python -m atlas.cli "copy path README.md"
+python -m atlas.cli "git status" --json
+python -m atlas.cli "suggest shell list files" --json
+```
+
+Milestone 6 focuses on local productivity and coding helpers. Destructive file
+operations are still blocked or confirmation-gated. See `docs/ATLAS_MILESTONE_6.md`.
+
 ## Optional providers
 
 Atlas works without paid keys for the current milestone. Later upgrades can use:

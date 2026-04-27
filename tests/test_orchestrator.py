@@ -61,3 +61,10 @@ def test_news_route_returns_structured_response():
 
     assert response.intent == "daily_news"
     assert "articles" in response.data
+
+
+def test_git_status_route_is_read_only():
+    response = AtlasOrchestrator().execute_text("git status")
+
+    assert response.intent == "git_status"
+    assert "returncode" in response.data

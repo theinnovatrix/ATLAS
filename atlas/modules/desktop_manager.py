@@ -9,9 +9,19 @@ Last Updated: 2026-04-26
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 import time
 import zipfile
+
+
+@dataclass(frozen=True)
+class PathValidation:
+    """Result from validating a user-provided path."""
+
+    ok: bool
+    path: Path
+    message: str = ""
 
 
 class DesktopManager:
@@ -36,6 +46,25 @@ class DesktopManager:
         target = Path(path).expanduser()
         target.mkdir(parents=True, exist_ok=True)
         return f"Folder ready: {target}"
+
+    def create_file(self, path: str, content: str = "") -> str:
+        """Create a text file, refusing to overwrite existing files."""
+        target = Path(path).expanduser()
+        if target.exists():
+            return f"File already exists: {target}"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+        return f"File created: {target}"
+
+    def validate_path(self, path: str, must_exist: bool = False) -> PathValidation:
+        """Validate and expand a path for local file operations."""
+        raw = path.strip()
+        if not raw:
+            return PathValidation(False, Path.home(), "Path is required.")
+        target = Path(raw).expanduser()
+        if must_exist and not target.exists():
+            return PathValidation(False, target, f"Path does not exist: {target}")
+        return PathValidation(True, target)
 
     def create_folder(self, path: Path) -> str:
         """Create a directory from a parsed path object."""
@@ -96,6 +125,25 @@ class DesktopManager:
     def delete_file_to_trash_plan(self, path: str) -> str:
         """Describe a safe delete operation without deleting anything."""
         return f"Confirmation required before moving to trash: {Path(path).expanduser()}"
+
+    def file_summary(self, path: str) -> dict[str, str]:
+        """Return metadata for a file or folder."""
+        validation = self.validate_path(path, must_exist=True)
+        if not validation.ok:
+            return {"error": validation.message, "path": str(validation.path)}
+        target = validation.path
+        if target.is_dir():
+            return {
+                "path": str(target),
+                "type": "directory",
+                "children": str(sum(1 for _ in target.iterdir())),
+            }
+        return {
+            "path": str(target),
+            "type": "file",
+            "bytes": str(target.stat().st_size),
+            "human": _human_bytes(target.stat().st_size),
+        }
 
 
 def _human_bytes(value: int) -> str:

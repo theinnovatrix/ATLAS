@@ -99,6 +99,43 @@ class CodingAssistant:
         """Return suggested test names for a feature."""
         return "; ".join(self.suggest_tests(feature))
 
+    def git_status(self, repo_path: str = ".") -> dict[str, str | int]:
+        """Return read-only git status for a repository."""
+        repo = Path(repo_path).expanduser()
+        result = _run_command(["git", "status", "--short"], repo, timeout_seconds=5)
+        return {"ok": result["returncode"] == 0, "repo": str(repo), **result}
+
+    def git_diff_summary(self, repo_path: str = ".") -> dict[str, str | int]:
+        """Return a compact git diff stat."""
+        repo = Path(repo_path).expanduser()
+        result = _run_command(["git", "diff", "--stat"], repo, timeout_seconds=5)
+        return {"ok": result["returncode"] == 0, "repo": str(repo), **result}
+
+    def shell_suggestion(self, request: str) -> dict[str, str | list[str]]:
+        """Suggest safe read-only shell commands for common developer requests."""
+        normalized = request.casefold().strip()
+        suggestions = {
+            "list files": ["python -m atlas.cli \"system diagnostics\" --json"],
+            "git status": ["git status --short"],
+            "run tests": ["python -m pytest -q"],
+            "lint": ["python -m flake8 atlas tests"],
+            "python version": ["python --version"],
+        }
+        for key, commands in suggestions.items():
+            if key in normalized:
+                return {
+                    "risk": "safe_read_only",
+                    "command": commands[0],
+                    "commands": commands,
+                    "execute": False,
+                }
+        return {
+            "risk": "review_required",
+            "execute": False,
+            "commands": [],
+            "message": "Atlas only suggests known safe shell commands in this milestone.",
+        }
+
     def run_allowed_command(self, command: str) -> dict[str, str | int]:
         """Run a tiny allowlist of read-only developer commands."""
         allowed = {
@@ -119,3 +156,20 @@ class CodingAssistant:
             "stdout": completed.stdout.strip(),
             "stderr": completed.stderr.strip(),
         }
+
+
+def _run_command(command: list[str], cwd: Path, timeout_seconds: int) -> dict[str, str | int]:
+    """Run a read-only developer command."""
+    completed = subprocess.run(
+        command,
+        cwd=str(cwd.expanduser()),
+        capture_output=True,
+        text=True,
+        timeout=timeout_seconds,
+        check=False,
+    )
+    return {
+        "returncode": completed.returncode,
+        "stdout": completed.stdout.strip(),
+        "stderr": completed.stderr.strip(),
+    }
