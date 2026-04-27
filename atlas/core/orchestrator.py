@@ -20,6 +20,7 @@ from atlas.core.safety import SafetyPolicy
 from atlas.models import AssistantResponse, Intent, RiskLevel
 from atlas.modules.coding_assistant import CodingAssistant
 from atlas.modules.desktop_manager import DesktopManager
+from atlas.modules.audio_processor import AudioProcessor
 from atlas.modules.productivity import ProductivityTools
 from atlas.modules.system_control import SystemControl
 from atlas.modules.voice_engine import VoiceEngine
@@ -40,6 +41,7 @@ class AtlasOrchestrator:
         self.safety = safety or SafetyPolicy()
         self.system = SystemControl()
         self.desktop = DesktopManager()
+        self.audio = AudioProcessor()
         self.productivity = ProductivityTools()
         self.web = WebMediaManager()
         self.coding = CodingAssistant()
@@ -84,7 +86,9 @@ class AtlasOrchestrator:
             "write_docs": self._write_docs,
             "ai_coder": self._ai_coder,
             "write_tests": self._write_tests,
+            "voice_status": self._voice_status,
             "text_to_speech": self._text_to_speech,
+            "speech_to_text": self._speech_to_text,
             "linux_commands": self._linux_command,
             "run_code": self._run_code,
             "capabilities": self._capabilities,
@@ -260,8 +264,59 @@ class AtlasOrchestrator:
         return AssistantResponse(True, "Suggested tests ready.", intent.name, data={"tests": tests})
 
     def _text_to_speech(self, intent: Intent) -> AssistantResponse:
-        data = self.voice.voice_profile()
-        return AssistantResponse(True, "Voice profile ready.", intent.name, data=data)
+        text = str(intent.args.get("target", "")).strip()
+        if not text:
+            data = self.voice.voice_profile()
+            return AssistantResponse(True, "Voice profile ready.", intent.name, data=data)
+        result = self.voice.speak_text(text)
+        return AssistantResponse(
+            result.ok,
+            result.message,
+            intent.name,
+            data={"provider": result.provider, "command": result.command},
+        )
+
+    def _voice_status(self, intent: Intent) -> AssistantResponse:
+        audio = self.audio.diagnostics()
+        voice = self.voice.runtime_status()
+        ok = audio.recorder_available or audio.stt_available or bool(voice["configured_tts"])
+        return AssistantResponse(
+            ok,
+            "Voice diagnostics ready.",
+            intent.name,
+            data={
+                "audio": {
+                    "recorder_available": audio.recorder_available,
+                    "stt_available": audio.stt_available,
+                    "tts_available": audio.tts_available,
+                    "missing_dependencies": list(audio.missing_dependencies),
+                    "devices": [device.name for device in audio.devices],
+                },
+                "stt": {"provider": audio.stt_provider, "available": audio.stt_available},
+                "tts": voice,
+                "recorder_available": audio.recorder_available,
+                "stt_available": audio.stt_available,
+                "tts_available": audio.tts_available,
+                "devices": [device.name for device in audio.devices],
+                "missing_dependencies": list(audio.missing_dependencies),
+                "voice": voice,
+            },
+        )
+
+    def _speech_to_text(self, intent: Intent) -> AssistantResponse:
+        source = Path(str(intent.args.get("target", ""))).expanduser()
+        try:
+            result = self.audio.transcribe(source)
+        except FileNotFoundError:
+            return AssistantResponse(False, f"Audio file does not exist: {source}", intent.name)
+        except RuntimeError as error:
+            return AssistantResponse(False, str(error), intent.name, data={"provider": "faster-whisper"})
+        return AssistantResponse(
+            result.ok,
+            result.message if not result.ok else result.text or "Transcription completed with no speech detected.",
+            intent.name,
+            data={"text": result.text, "language": result.language, "segments": list(result.segments)},
+        )
 
     def _linux_command(self, intent: Intent) -> AssistantResponse:
         data = self.coding.run_allowed_command(str(intent.args.get("target", "")))

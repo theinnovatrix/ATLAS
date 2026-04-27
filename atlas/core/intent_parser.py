@@ -46,6 +46,15 @@ class IntentParser:
         ("quick_note", "productivity", "en", ("note", "remember")),
         ("quick_note", "productivity", "hi", ("note banao", "yaad rakho")),
         ("quick_note", "productivity", "ur", ("note banao", "yaad rakho")),
+        ("voice_status", "voice", "en", ("voice status", "audio status", "speech status")),
+        ("voice_status", "voice", "hi", ("voice status", "audio status", "awaz status")),
+        ("voice_status", "voice", "ur", ("voice status", "audio status", "awaz status")),
+        ("speech_to_text", "voice", "en", ("transcribe", "speech to text")),
+        ("speech_to_text", "voice", "hi", ("transcribe", "speech to text", "awaz likho")),
+        ("speech_to_text", "voice", "ur", ("transcribe", "speech to text", "awaz likho")),
+        ("text_to_speech", "voice", "en", ("say", "speak", "text to speech")),
+        ("text_to_speech", "voice", "hi", ("bolo", "speak", "text to speech")),
+        ("text_to_speech", "voice", "ur", ("bolo", "speak", "text to speech")),
         ("capabilities", "help", "en", ("features", "capabilities", "what can you do")),
         ("capabilities", "help", "hi", ("kya kar sakti", "features batao")),
         ("capabilities", "help", "ur", ("kya kar sakti", "features batao")),
@@ -113,6 +122,8 @@ def _extract_args(intent_name: str, text: str) -> dict[str, str | int]:
         "web_search": _extract_text_target,
         "quick_note": _extract_text_target,
         "translate_text": _extract_text_target,
+        "speech_to_text": _extract_prefixed_target,
+        "text_to_speech": _extract_prefixed_target,
     }
     extractor = extractors.get(intent_name)
     return extractor(text) if extractor else {}
@@ -151,7 +162,22 @@ def _extract_weather_target(text: str) -> dict[str, str]:
 
 def _extract_text_target(text: str) -> dict[str, str]:
     """Extract a free-form text target."""
-    words = ("search", "search karo", "dhundo", "talash", "note", "remember", "translate")
+    words = (
+        "search",
+        "search karo",
+        "dhundo",
+        "talash",
+        "note",
+        "remember",
+        "translate",
+        "transcribe",
+        "speech to text",
+        "awaz likho",
+        "say",
+        "speak",
+        "text to speech",
+        "bolo",
+    )
     return {"target": _strip_words(text, words)}
 
 
@@ -161,3 +187,20 @@ def _strip_words(text: str, words: tuple[str, ...]) -> str:
     for word in words:
         cleaned = cleaned.replace(word, " ")
     return re.sub(r"\s+", " ", cleaned).strip()
+
+
+def _extract_prefixed_target(text: str) -> dict[str, str]:
+    """Extract text after a voice command prefix without mutating paths."""
+    prefixes = (
+        "speech to text",
+        "text to speech",
+        "awaz likho",
+        "transcribe",
+        "speak",
+        "bolo",
+        "say",
+    )
+    for prefix in prefixes:
+        if text.startswith(prefix):
+            return {"target": text[len(prefix):].strip()}
+    return {"target": text}
