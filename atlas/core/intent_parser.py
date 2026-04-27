@@ -46,6 +46,15 @@ class IntentParser:
         ("quick_note", "productivity", "en", ("note", "remember")),
         ("quick_note", "productivity", "hi", ("note banao", "yaad rakho")),
         ("quick_note", "productivity", "ur", ("note banao", "yaad rakho")),
+        ("timer", "productivity", "en", ("timer", "set timer")),
+        ("timer", "productivity", "hi", ("timer lagao", "timer")),
+        ("timer", "productivity", "ur", ("timer lagao", "timer")),
+        ("todo_list", "productivity", "en", ("todo", "to do", "task")),
+        ("todo_list", "productivity", "hi", ("kaam likho", "todo", "task")),
+        ("todo_list", "productivity", "ur", ("kaam likho", "todo", "task")),
+        ("dictionary", "productivity", "en", ("define", "meaning", "dictionary")),
+        ("dictionary", "productivity", "hi", ("matlab", "meaning", "dictionary")),
+        ("dictionary", "productivity", "ur", ("matlab", "meaning", "dictionary")),
         ("voice_status", "voice", "en", ("voice status", "audio status", "speech status")),
         ("voice_status", "voice", "hi", ("voice status", "audio status", "awaz status")),
         ("voice_status", "voice", "ur", ("voice status", "audio status", "awaz status")),
@@ -122,6 +131,9 @@ def _extract_args(intent_name: str, text: str) -> dict[str, str | int]:
         "web_search": _extract_text_target,
         "quick_note": _extract_text_target,
         "translate_text": _extract_text_target,
+        "todo_list": _extract_todo_target,
+        "dictionary": _extract_dictionary_target,
+        "timer": _extract_minutes,
         "speech_to_text": _extract_prefixed_target,
         "text_to_speech": _extract_prefixed_target,
     }
@@ -179,6 +191,23 @@ def _extract_text_target(text: str) -> dict[str, str]:
         "bolo",
     )
     return {"target": _strip_words(text, words)}
+
+
+def _extract_todo_target(text: str) -> dict[str, str]:
+    """Extract a todo item or leave empty to list todos."""
+    target = _strip_words(text, ("add todo", "todo add", "todo", "to do", "task", "kaam likho"))
+    return {"target": target}
+
+
+def _extract_dictionary_target(text: str) -> dict[str, str]:
+    """Extract a word to define."""
+    return {"target": _strip_words(text, ("define", "meaning", "dictionary", "matlab"))}
+
+
+def _extract_minutes(text: str) -> dict[str, int]:
+    """Extract timer minutes."""
+    number = re.search(r"\b(\d{1,3})\b", text)
+    return {"minutes": int(number.group(1)) if number else 5}
 
 
 def _strip_words(text: str, words: tuple[str, ...]) -> str:

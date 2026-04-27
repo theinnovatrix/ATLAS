@@ -56,3 +56,11 @@ def test_unknown_intent() -> None:
 
     assert intent.name == "unknown"
     assert intent.confidence == 0.0
+
+
+def test_parse_todo_timer_and_dictionary_aliases() -> None:
+    parser = IntentParser()
+
+    assert parser.parse("todo buy milk").name == "todo_list"
+    assert parser.parse("timer 12").args["minutes"] == 12
+    assert parser.parse("define atlas").args["target"] == "atlas"

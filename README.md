@@ -225,6 +225,58 @@ python -m atlas.cli "transcribe /path/to/audio.wav"
 `voice status` works without a microphone. Real recording and playback need the
 optional audio packages and Linux audio tools listed in `docs/ATLAS_MILESTONE_2.md`.
 
+## Updating an existing laptop install to Milestone 3
+
+Use this after Milestone 2 is working.
+
+### Step 1: Get the latest code
+
+Git install:
+
+```bash
+cd ~/ATLAS
+git fetch origin
+git checkout Atlasnova-agent-planning-0f22
+git pull origin Atlasnova-agent-planning-0f22
+```
+
+Use `git pull origin main` only after the Milestone 3 PR has been merged into
+`main`. Until then, Milestone 3 files such as `tests/test_milestone_3_routing.py`
+exist on the active PR branch above.
+
+ZIP install:
+
+1. Download the newest ZIP.
+2. Extract it.
+3. Replace the old Atlas folder.
+4. Open a terminal inside the new folder.
+
+### Step 2: Reinstall and run routing tests
+
+```bash
+source .venv/bin/activate
+python -m pip install -e .
+python -m pip install -r requirements-dev.txt
+python -m pytest tests/test_intent_parser.py tests/test_orchestrator.py tests/test_milestone_3_routing.py -q
+```
+
+Run each command separately. `python -m pip install -e .` needs the final `.`;
+that dot means "install this Atlas folder".
+
+### Step 3: Try Milestone 3 command routing
+
+```bash
+python -m atlas.cli "timer 10"
+python -m atlas.cli "define atlas"
+python -m atlas.cli "todo buy milk"
+python -m atlas.cli "open firefox"
+python -m atlas.cli "open firefox" --confirm
+python -m atlas.cli "make the moon blue" --json
+```
+
+Milestone 3 improves intent parsing, slot extraction, unknown-command
+suggestions, and confirmation metadata. See `docs/ATLAS_MILESTONE_3.md`.
+
 ## Optional providers
 
 Atlas works without paid keys for the current milestone. Later upgrades can use:
