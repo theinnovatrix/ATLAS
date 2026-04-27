@@ -55,3 +55,98 @@ def test_voice_plan_names_female_bilingual_defaults() -> None:
     assert "female" in plan.casefold()
     assert "Hindi" in plan
     assert "Urdu" in plan
+
+
+class FakeAIClient:
+    """Fake hosted AI HTTP client for tests."""
+
+    def __init__(self, response: dict[str, object]) -> None:
+        self.response = response
+        self.requests: list[tuple[str, dict[str, object], dict[str, str] | None]] = []
+
+    def post_json(
+        self,
+        url: str,
+        payload: dict[str, object],
+        headers: dict[str, str] | None = None,
+    ) -> dict[str, object]:
+        self.requests.append((url, payload, headers))
+        return self.response
+
+
+def _gemini_response(raw_json: str) -> dict[str, object]:
+    return {"candidates": [{"content": {"parts": [{"text": raw_json}]}}]}
+
+
+def test_hosted_planner_maps_valid_json_intent() -> None:
+    client = FakeAIClient(
+        _gemini_response(
+            '{"intent":"web_search","args":{"target":"linux assistant"},"language":"en"}'
+        )
+    )
+    brain = FreeFirstBrain(
+        env={"GEMINI_API_KEY": "key"},
+        client=client,
+    )
+
+    intent = brain.plan_hosted("do something flexible")
+
+    assert intent is not None
+    assert intent.name == "web_search"
+    assert intent.args["target"] == "linux assistant"
+    assert intent.args["planned_by"] == "gemini"
+    assert "generativelanguage.googleapis.com" in client.requests[0][0]
+
+
+def test_hosted_planner_rejects_disallowed_intent() -> None:
+    client = FakeAIClient(
+        _gemini_response(
+            '{"intent":"private_backend_scrape","args":{},"language":"en"}'
+        )
+    )
+    brain = FreeFirstBrain(
+        env={"GEMINI_API_KEY": "key"},
+        client=client,
+    )
+
+    assert brain.plan_hosted("break rules") is None
+
+
+def test_hosted_planner_falls_back_to_groq_when_gemini_invalid() -> None:
+    class SequenceClient(FakeAIClient):
+        def __init__(self) -> None:
+            super().__init__({})
+            self.responses = [
+                _gemini_response("not-json"),
+                {
+                    "choices": [
+                        {
+                            "message": {
+                                "content": (
+                                    '{"intent":"dictionary","args":{"target":"atlas"},'
+                                    '"language":"en"}'
+                                )
+                            }
+                        }
+                    ]
+                },
+            ]
+
+        def post_json(
+            self,
+            url: str,
+            payload: dict[str, object],
+            headers: dict[str, str] | None = None,
+        ) -> dict[str, object]:
+            self.requests.append((url, payload, headers))
+            return self.responses.pop(0)
+
+    client = SequenceClient()
+    brain = FreeFirstBrain(env={"GEMINI_API_KEY": "key", "GROQ_API_KEY": "key"}, client=client)
+
+    intent = brain.plan_hosted("what does atlas mean")
+
+    assert intent is not None
+    assert intent.name == "dictionary"
+    assert intent.args["planned_by"] == "groq"
+    assert "api.groq.com" in client.requests[1][0]

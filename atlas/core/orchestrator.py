@@ -117,6 +117,8 @@ class AtlasOrchestrator:
         intent = self.parser.parse(text)
         if intent.name == "unknown":
             planned = self.brain.plan(text)
+            if planned is None:
+                planned = self.brain.plan_hosted(text)
             if planned is not None:
                 intent = planned
         return self.execute_intent(intent, confirmation_token)
