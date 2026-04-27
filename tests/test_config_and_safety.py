@@ -27,9 +27,20 @@ def test_free_first_provider_defaults_are_available() -> None:
     assert settings.assistant_name == "Atlas"
     assert settings.persona == "bilingual female desktop cognitive engine"
     assert "ollama" in configured_provider_names(settings.llm_options)
+    assert "gemini" not in configured_provider_names(settings.llm_options)
     assert "faster-whisper" in configured_provider_names(settings.stt_options)
     assert "piper" in configured_provider_names(settings.tts_options)
     assert "edge-tts" in configured_provider_names(settings.tts_options)
+
+
+def test_gemini_and_groq_are_configured_when_keys_exist() -> None:
+    """Free/low-cost hosted providers should activate from env vars."""
+    settings = default_settings()
+    env = {"GEMINI_API_KEY": "gemini-test", "GROQ_API_KEY": "groq-test"}
+    configured = [option.name for option in settings.llm_options if option.is_configured(env)]
+
+    assert "gemini" in configured
+    assert "groq" in configured
 
 
 def test_confirm_risk_requires_token() -> None:

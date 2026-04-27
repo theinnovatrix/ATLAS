@@ -42,10 +42,14 @@ class AtlasSettings:
     secondary_languages: tuple[str, ...] = ("hi", "ur")
     persona: str = "bilingual female desktop cognitive engine"
     safe_mode: bool = True
-    preferred_llm: str = "ollama"
+    preferred_llm: str = "gemini"
     preferred_stt: str = "faster-whisper"
-    preferred_tts: str = "piper"
+    preferred_tts: str = "edge-tts"
+    preferred_voice: str = "en-US-AriaNeural"
+    voice_gender: str = "female"
     preferred_search: str = "duckduckgo-lite"
+    default_voice: str = "en-US-AriaNeural"
+    hindi_urdu_voice: str = "hi-IN-SwaraNeural"
     llm_options: tuple[ProviderOption, ...] = field(default_factory=tuple)
     stt_options: tuple[ProviderOption, ...] = field(default_factory=tuple)
     tts_options: tuple[ProviderOption, ...] = field(default_factory=tuple)
@@ -57,6 +61,14 @@ def default_settings() -> AtlasSettings:
     return AtlasSettings(
         llm_options=(
             ProviderOption(
+                name="gemini",
+                cost_tier="free_tier",
+                requires_key=True,
+                env_var="GEMINI_API_KEY",
+                languages=("en", "hi", "ur"),
+                notes="Primary hosted free-tier brain option when GEMINI_API_KEY is set.",
+            ),
+            ProviderOption(
                 name="ollama",
                 cost_tier="free_local",
                 requires_key=False,
@@ -65,7 +77,7 @@ def default_settings() -> AtlasSettings:
             ),
             ProviderOption(
                 name="groq",
-                cost_tier="free_trial_or_low_cost",
+                cost_tier="free_tier_or_low_cost",
                 requires_key=True,
                 env_var="GROQ_API_KEY",
                 languages=("en", "hi", "ur"),
@@ -118,7 +130,7 @@ def default_settings() -> AtlasSettings:
                 cost_tier="free",
                 requires_key=False,
                 languages=("en", "hi", "ur"),
-                notes="Free neural voices; use female voices such as en-US-AriaNeural.",
+                notes="Free neural female voices: en-US-AriaNeural and hi-IN-SwaraNeural.",
             ),
             ProviderOption(
                 name="elevenlabs",

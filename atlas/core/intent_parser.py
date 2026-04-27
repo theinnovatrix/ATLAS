@@ -57,7 +57,7 @@ class IntentParser:
         ("weather_info", "web", "en", ("weather",)),
         ("weather_info", "web", "hi", ("mausam", "weather")),
         ("weather_info", "web", "ur", ("mausam", "weather")),
-        ("web_search", "web", "en", ("search", "find online", "look up")),
+        ("web_search", "web", "en", ("search",)),
         ("web_search", "web", "hi", ("search karo", "dhundo", "talash")),
         ("web_search", "web", "ur", ("search karo", "dhundo", "talash")),
         ("daily_news", "web", "en", ("news", "daily news", "headlines")),

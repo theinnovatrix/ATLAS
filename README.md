@@ -392,11 +392,62 @@ python -m atlas.cli "suggest shell list files" --json
 Milestone 6 focuses on local productivity and coding helpers. Destructive file
 operations are still blocked or confirmation-gated. See `docs/ATLAS_MILESTONE_6.md`.
 
+## Updating an existing laptop install to Milestone 8
+
+Use this after Milestone 6 is working. Milestone 8 adds the free-first AI brain
+that understands more natural commands before falling back to exact rules.
+
+### Step 1: Get the latest Milestone 8 branch
+
+```bash
+cd ~/ATLAS
+git fetch origin
+git checkout Atlasmilestone-8-ai-brain-0f22
+git pull origin Atlasmilestone-8-ai-brain-0f22
+```
+
+Use `git pull origin main` only after the Milestone 8 PR has been merged into
+`main`.
+
+### Step 2: Reinstall and run AI brain tests
+
+```bash
+source .venv/bin/activate
+python -m pip install -e .
+python -m pip install -r requirements-dev.txt
+python -m pytest tests/test_ai_brain.py tests/test_config_and_safety.py -q
+```
+
+### Step 3: Add optional free/low-cost API keys
+
+Atlas works without keys through local deterministic planning. If you want hosted
+free-tier planning later, set either or both:
+
+```bash
+export GEMINI_API_KEY="your_gemini_key_here"
+export GROQ_API_KEY="your_groq_key_here"
+```
+
+### Step 4: Try flexible AI-brain commands
+
+```bash
+python -m atlas.cli "please lower the sound a little" --json
+python -m atlas.cli "find news about linux today" --json
+python -m atlas.cli "please define atlas for me" --json
+python -m atlas.cli "start a focus session for 15 minutes" --json
+```
+
+Milestone 8 keeps a free-first setup: local deterministic planner first, Gemini
+and Groq free-tier slots next, paid providers later. Voice defaults remain
+bilingual and female-oriented through Edge TTS/Piper plus optional ElevenLabs.
+See `docs/ATLAS_MILESTONE_8.md`.
+
 ## Optional providers
 
 Atlas works without paid keys for the current milestone. Later upgrades can use:
 
 - `GROQ_API_KEY` for low-cost hosted LLM or Whisper.
+- `GEMINI_API_KEY` for Gemini free-tier AI planning.
 - `OPENROUTER_API_KEY` for free/low-cost model routing.
 - `ELEVENLABS_API_KEY` for premium female TTS voices.
 - `SERPAPI_API_KEY` for structured web search.

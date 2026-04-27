@@ -47,6 +47,8 @@ class VoiceEngine:
         """Return installed runtime support for voice output providers."""
         return {
             "configured_tts": self.provider_summary()["tts"],
+            "female_voice_default": "en-US-AriaNeural",
+            "bilingual_voice_languages": ["en", "hi", "ur"],
             "piper_binary": shutil.which("piper") is not None,
             "edge_tts_module": importlib.util.find_spec("edge_tts") is not None,
             "elevenlabs_module": importlib.util.find_spec("elevenlabs") is not None,
@@ -56,7 +58,7 @@ class VoiceEngine:
         """Return the Atlas bilingual female voice strategy."""
         return (
             "Atlas defaults to free/local speech: Faster-Whisper for English, Hindi, and Urdu "
-            "STT; Piper or Edge TTS for female voice output; ElevenLabs remains an optional "
+            "STT; Piper or Edge TTS with en-US-AriaNeural-style female voice output; ElevenLabs remains an optional "
             "premium upgrade for matching the reference voice later."
         )
 
