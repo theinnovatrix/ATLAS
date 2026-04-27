@@ -235,8 +235,14 @@ Git install:
 
 ```bash
 cd ~/ATLAS
-git pull origin main
+git fetch origin
+git checkout Atlasnova-agent-planning-0f22
+git pull origin Atlasnova-agent-planning-0f22
 ```
+
+Use `git pull origin main` only after the Milestone 3 PR has been merged into
+`main`. Until then, Milestone 3 files such as `tests/test_milestone_3_routing.py`
+exist on the active PR branch above.
 
 ZIP install:
 
@@ -250,8 +256,12 @@ ZIP install:
 ```bash
 source .venv/bin/activate
 python -m pip install -e .
-python -m pytest tests/test_intent_parser.py tests/test_orchestrator.py -q
+python -m pip install -r requirements-dev.txt
+python -m pytest tests/test_intent_parser.py tests/test_orchestrator.py tests/test_milestone_3_routing.py -q
 ```
+
+Run each command separately. `python -m pip install -e .` needs the final `.`;
+that dot means "install this Atlas folder".
 
 ### Step 3: Try Milestone 3 command routing
 
