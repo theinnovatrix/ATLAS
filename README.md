@@ -392,6 +392,47 @@ python -m atlas.cli "suggest shell list files" --json
 Milestone 6 focuses on local productivity and coding helpers. Destructive file
 operations are still blocked or confirmation-gated. See `docs/ATLAS_MILESTONE_6.md`.
 
+## Updating an existing laptop install to Milestone 7
+
+Use this after Milestone 6 is working.
+
+### Step 1: Get the latest Milestone 7 branch
+
+```bash
+cd ~/ATLAS
+git fetch origin
+git checkout Atlasmilestone-7-gui-0f22
+git pull origin Atlasmilestone-7-gui-0f22
+```
+
+Use `git pull origin main` only after the Milestone 7 PR has been merged into
+`main`.
+
+### Step 2: Reinstall and run GUI tests
+
+```bash
+source .venv/bin/activate
+python -m pip install -e .
+python -m pip install -r requirements-dev.txt
+python -m pytest tests/test_gui_controller.py -q
+```
+
+### Step 3: Install optional GUI dependency
+
+```bash
+python -m pip install ".[gui]"
+```
+
+### Step 4: Launch Atlas GUI
+
+```bash
+atlas-gui
+```
+
+If PyQt6 is not installed, `atlas-gui` prints an install message instead of
+crashing. The GUI runs text commands through the same Atlas orchestrator as the
+CLI. See `docs/ATLAS_MILESTONE_7.md`.
+
 ## Optional providers
 
 Atlas works without paid keys for the current milestone. Later upgrades can use:

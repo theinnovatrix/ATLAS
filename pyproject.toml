@@ -24,6 +24,7 @@ dev = ["pytest", "pytest-cov", "ruff", "mypy", "bandit"]
 
 [project.scripts]
 atlas = "atlas.cli:main"
+atlas-gui = "atlas.gui.app:main"
 
 [tool.setuptools.packages.find]
 include = ["atlas*"]
