@@ -442,6 +442,46 @@ and Groq free-tier slots next, paid providers later. Voice defaults remain
 bilingual and female-oriented through Edge TTS/Piper plus optional ElevenLabs.
 See `docs/ATLAS_MILESTONE_8.md`.
 
+## Updating an existing laptop install to Milestone 9
+
+Use this after Milestone 8 is working. Milestone 9 lets Atlas call Gemini or
+Groq only when local planning cannot understand a command.
+
+### Step 1: Get the latest Milestone 9 branch
+
+```bash
+cd ~/ATLAS
+git fetch origin
+git checkout Atlasmilestone-9-hosted-ai-0f22
+git pull origin Atlasmilestone-9-hosted-ai-0f22
+```
+
+### Step 2: Reinstall and run hosted-AI tests
+
+```bash
+source .venv/bin/activate
+python -m pip install -e .
+python -m pip install -r requirements-dev.txt
+python -m pytest tests/test_ai_brain.py -q
+```
+
+### Step 3: Add free-tier keys
+
+```bash
+export GEMINI_API_KEY="your_gemini_key_here"
+export GROQ_API_KEY="your_groq_key_here"
+```
+
+### Step 4: Try hosted fallback
+
+```bash
+python -m atlas.cli "please organize my desktop files" --json
+python -m atlas.cli "please find online linux voice assistant" --json
+```
+
+Atlas still validates hosted AI output against known safe Atlas intents. It will
+not run invented tools or dangerous actions. See `docs/ATLAS_MILESTONE_9.md`.
+
 ## Optional providers
 
 Atlas works without paid keys for the current milestone. Later upgrades can use:

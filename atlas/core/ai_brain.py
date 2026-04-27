@@ -10,12 +10,16 @@ Last Updated: 2026-04-27
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 import os
 import re
-from typing import Mapping
+from typing import Any, Mapping, Protocol
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
+from atlas.capabilities import capability_by_name
 from atlas.core.config import AtlasSettings, ProviderOption, default_settings
-from atlas.models import Intent
+from atlas.models import Intent, RiskLevel
 
 
 @dataclass(frozen=True)
@@ -27,6 +31,54 @@ class BrainProviderStatus:
     free_first: tuple[str, ...]
     bilingual_languages: tuple[str, ...]
     female_voice: str
+
+
+class AIPlannerClient(Protocol):
+    """HTTP client interface used by hosted AI planners."""
+
+    def post_json(
+        self,
+        url: str,
+        payload: dict[str, Any],
+        headers: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """Post JSON and return a decoded JSON object."""
+
+
+class UrlLibAIClient:
+    """Tiny urllib JSON client to avoid adding hosted-AI SDK dependencies."""
+
+    def __init__(self, timeout: float = 10.0) -> None:
+        """Initialize with request timeout."""
+        self.timeout = timeout
+
+    def post_json(
+        self,
+        url: str,
+        payload: dict[str, Any],
+        headers: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """Post JSON and return decoded response."""
+        body = json.dumps(payload).encode("utf-8")
+        request = Request(
+            url,
+            data=body,
+            headers={
+                "Content-Type": "application/json",
+                "User-Agent": "AtlasAssistant/0.9",
+                **(headers or {}),
+            },
+            method="POST",
+        )
+        try:
+            with urlopen(request, timeout=self.timeout) as response:
+                decoded = response.read().decode("utf-8", errors="replace")
+        except (HTTPError, URLError, TimeoutError, OSError) as error:
+            raise RuntimeError(f"Hosted AI request failed: {error}") from error
+        parsed = json.loads(decoded)
+        if not isinstance(parsed, dict):
+            raise RuntimeError("Hosted AI returned non-object JSON.")
+        return parsed
 
 
 class FreeFirstBrain:
@@ -41,10 +93,12 @@ class FreeFirstBrain:
         self,
         settings: AtlasSettings | None = None,
         env: Mapping[str, str] | None = None,
+        client: AIPlannerClient | None = None,
     ) -> None:
         """Initialize the planner."""
         self.settings = settings or default_settings()
         self.env = env or os.environ
+        self.client = client or UrlLibAIClient()
 
     def provider_status(self) -> BrainProviderStatus:
         """Return free-first AI provider state."""
@@ -65,7 +119,14 @@ class FreeFirstBrain:
         return self.settings.llm_options
 
     def plan(self, text: str) -> Intent | None:
-        """Return a planned intent for flexible natural language, if recognized."""
+        """Return a planned intent from local rules or hosted free-tier providers."""
+        local_plan = self.plan_local(text)
+        if local_plan is not None:
+            return local_plan
+        return self.plan_hosted(text)
+
+    def plan_local(self, text: str) -> Intent | None:
+        """Return a deterministic local plan, if recognized."""
         normalized = _normalize(text)
         if not normalized:
             return None
@@ -130,6 +191,60 @@ class FreeFirstBrain:
             )
         return None
 
+    def plan_hosted(self, text: str) -> Intent | None:
+        """Use Gemini first, then Groq, when API keys are configured."""
+        if self.env.get("GEMINI_API_KEY"):
+            plan = self._plan_with_gemini(text, self.env["GEMINI_API_KEY"])
+            if plan is not None:
+                return plan
+        if self.env.get("GROQ_API_KEY"):
+            return self._plan_with_groq(text, self.env["GROQ_API_KEY"])
+        return None
+
+    def _plan_with_gemini(self, text: str, api_key: str) -> Intent | None:
+        """Request a structured intent from Gemini free-tier API."""
+        url = (
+            "https://generativelanguage.googleapis.com/v1beta/models/"
+            f"gemini-1.5-flash:generateContent?key={api_key}"
+        )
+        payload = {
+            "contents": [
+                {
+                    "role": "user",
+                    "parts": [{"text": _planner_prompt(text)}],
+                }
+            ],
+            "generationConfig": {"temperature": 0.0, "responseMimeType": "application/json"},
+        }
+        try:
+            response = self.client.post_json(url, payload)
+            raw_text = _extract_gemini_text(response)
+            return _intent_from_hosted_json(raw_text, text, "gemini")
+        except (KeyError, RuntimeError, ValueError, json.JSONDecodeError):
+            return None
+
+    def _plan_with_groq(self, text: str, api_key: str) -> Intent | None:
+        """Request a structured intent from Groq OpenAI-compatible API."""
+        payload = {
+            "model": "llama-3.1-8b-instant",
+            "temperature": 0,
+            "messages": [
+                {"role": "system", "content": _planner_system_prompt()},
+                {"role": "user", "content": text},
+            ],
+            "response_format": {"type": "json_object"},
+        }
+        try:
+            response = self.client.post_json(
+                "https://api.groq.com/openai/v1/chat/completions",
+                payload,
+                headers={"Authorization": f"Bearer {api_key}"},
+            )
+            raw_text = str(response["choices"][0]["message"]["content"])
+            return _intent_from_hosted_json(raw_text, text, "groq")
+        except (KeyError, RuntimeError, ValueError, json.JSONDecodeError):
+            return None
+
 
 def _normalize(text: str) -> str:
     """Normalize planning text."""
@@ -159,3 +274,79 @@ def _detect_language(text: str) -> str:
     if _contains_any(text, ("karo", "kholo", "batao", "kam", "zyada", "madad")):
         return "hi"
     return "en"
+
+
+def _planner_system_prompt() -> str:
+    """Return strict instructions for hosted planners."""
+    return (
+        "You are Atlas, a Linux desktop assistant planner. Return only JSON. "
+        "Schema: {\"intent\":\"name\",\"args\":{...},\"language\":\"en|hi|ur\"}. "
+        "Use only existing Atlas intents. Do not invent commands. If unsure, "
+        "return {\"intent\":\"unknown\",\"args\":{},\"language\":\"en\"}."
+    )
+
+
+def _planner_prompt(text: str) -> str:
+    """Return Gemini planner prompt."""
+    return (
+        f"{_planner_system_prompt()}\n"
+        "Useful intents include web_search, weather_info, daily_news, page_summary, "
+        "youtube_metadata, volume_control, brightness_control, app_launcher, "
+        "downloads_folder, todo_list, timer, pomodoro_timer, dictionary, "
+        "git_status, safe_shell, system_diagnostics.\n"
+        f"User command: {text}"
+    )
+
+
+def _extract_gemini_text(response: dict[str, Any]) -> str:
+    """Extract text part from Gemini response."""
+    return str(response["candidates"][0]["content"]["parts"][0]["text"])
+
+
+def _intent_from_hosted_json(raw_text: str, original_text: str, provider: str) -> Intent | None:
+    """Validate hosted JSON and return a safe Atlas intent."""
+    parsed = json.loads(_strip_json_fence(raw_text))
+    if not isinstance(parsed, dict):
+        return None
+    intent_name = str(parsed.get("intent", "unknown")).strip()
+    if intent_name == "unknown":
+        return None
+    capability = capability_by_name(intent_name)
+    if capability is None or capability.risk == RiskLevel.DANGEROUS:
+        return None
+    args = parsed.get("args", {})
+    if not isinstance(args, dict):
+        return None
+    safe_args = _safe_args(args)
+    safe_args["planned_by"] = provider
+    language = str(parsed.get("language", _detect_language(_normalize(original_text))))
+    if language not in {"en", "hi", "ur"}:
+        language = "en"
+    return Intent(
+        intent_name,
+        capability.category,
+        0.78,
+        language=language,
+        args=safe_args,
+        raw_text=original_text,
+    )
+
+
+def _strip_json_fence(raw_text: str) -> str:
+    """Remove common Markdown JSON fences."""
+    cleaned = raw_text.strip()
+    if cleaned.startswith("```"):
+        cleaned = re.sub(r"^```(?:json)?", "", cleaned).strip()
+        cleaned = re.sub(r"```$", "", cleaned).strip()
+    return cleaned
+
+
+def _safe_args(args: dict[str, Any]) -> dict[str, str | int | float | bool]:
+    """Keep only JSON scalar args accepted by Atlas tools."""
+    safe: dict[str, str | int | float | bool] = {}
+    for key, value in args.items():
+        if not isinstance(key, str):
+            continue
+        if isinstance(value, bool | int | float | str):
+            safe[key] = value
+    return safe
