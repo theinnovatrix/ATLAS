@@ -46,7 +46,7 @@ class WebMediaManager:
                 False,
                 f"Weather lookup failed for {location}.",
                 "weather_info",
-                data={"error": str(exc)},
+                data={"city": location, "error": str(exc)},
             )
 
     def web_search(self, query: str) -> AssistantResponse:

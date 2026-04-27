@@ -141,6 +141,90 @@ python -m pip install -r requirements-dev.txt
 python -m pytest -q
 ```
 
+## Updating an existing laptop install to Milestone 2
+
+Use this section if you already installed Milestone 1 and want the new Voice I/O
+milestone.
+
+### Step 1: Open your existing Atlas folder
+
+If you installed from ZIP, go to the extracted folder:
+
+```bash
+cd ~/Downloads/ATLAS-main
+```
+
+If you installed with Git, go to the cloned folder:
+
+```bash
+cd ~/ATLAS
+```
+
+Use the actual folder path if you saved Atlas somewhere else.
+
+### Step 2: Get the latest code
+
+If you use Git:
+
+```bash
+git pull origin main
+```
+
+If you use ZIP:
+
+1. Download the newest ZIP from GitHub.
+2. Extract it.
+3. Replace your old Atlas folder with the new extracted folder.
+4. Open a terminal inside the new folder.
+
+### Step 3: Activate your virtual environment
+
+```bash
+source .venv/bin/activate
+```
+
+If `.venv` does not exist anymore, recreate it:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### Step 4: Reinstall Atlas and dependencies
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install -e .
+python -m pip install -r requirements-dev.txt
+```
+
+### Step 5: Run the Milestone 1 tests
+
+```bash
+python -m pytest tests/test_orchestrator.py -q
+```
+
+If only `test_hindi_weather_command_uses_city_argument` failed before, update to
+the latest code and rerun it. Atlas now keeps `response.data["city"]` available
+even if the free weather endpoint is down.
+
+### Step 6: Run the Milestone 2 tests
+
+```bash
+python -m pytest tests/test_voice_io.py -q
+```
+
+### Step 7: Try the Milestone 2 commands
+
+```bash
+python -m atlas.cli "voice status"
+python -m atlas.cli "say hello Atlas"
+python -m atlas.cli "transcribe /path/to/audio.wav"
+```
+
+`voice status` works without a microphone. Real recording and playback need the
+optional audio packages and Linux audio tools listed in `docs/ATLAS_MILESTONE_2.md`.
+
 ## Optional providers
 
 Atlas works without paid keys for the current milestone. Later upgrades can use:
