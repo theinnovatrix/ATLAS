@@ -14,7 +14,11 @@ from atlas.gui.main_window import run_gui
 
 def main() -> int:
     """Launch the Atlas GUI."""
-    return run_gui()
+    try:
+        return run_gui()
+    except RuntimeError as error:
+        print(error)
+        return 1
 
 
 if __name__ == "__main__":

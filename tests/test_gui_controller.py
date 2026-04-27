@@ -1,4 +1,5 @@
 from atlas.gui.controller import AtlasGuiController, ChatMessage
+from atlas.gui_app import main
 from atlas.gui.main_window import pyqt_available
 
 
@@ -31,3 +32,7 @@ def test_controller_serializes_history() -> None:
 
 def test_pyqt_availability_probe_returns_boolean() -> None:
     assert isinstance(pyqt_available(), bool)
+
+
+def test_gui_console_entrypoint_imports() -> None:
+    assert callable(main)
