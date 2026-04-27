@@ -71,6 +71,8 @@ class IntentParser:
         ("quick_note", "productivity", "en", ("note", "remember")),
         ("quick_note", "productivity", "hi", ("note banao", "yaad rakho")),
         ("quick_note", "productivity", "ur", ("note banao", "yaad rakho")),
+        ("recent_notes", "productivity", "en", ("recent notes", "list notes", "notes")),
+        ("pomodoro_timer", "productivity", "en", ("pomodoro", "focus timer")),
         ("timer", "productivity", "en", ("timer", "set timer")),
         ("timer", "productivity", "hi", ("timer lagao", "timer")),
         ("timer", "productivity", "ur", ("timer lagao", "timer")),
@@ -92,6 +94,13 @@ class IntentParser:
         ("capabilities", "help", "en", ("features", "capabilities", "what can you do")),
         ("capabilities", "help", "hi", ("kya kar sakti", "features batao")),
         ("capabilities", "help", "ur", ("kya kar sakti", "features batao")),
+        ("zip_files", "desktop", "en", ("zip", "compress")),
+        ("copy_path", "desktop", "en", ("copy path", "absolute path")),
+        ("delete_file", "desktop", "en", ("delete file", "trash file")),
+        ("git_status", "developer", "en", ("git status", "repo status")),
+        ("git_diff", "developer", "en", ("git diff", "repo diff")),
+        ("json_validator", "developer", "en", ("validate json", "json validate", "check json")),
+        ("safe_shell", "developer", "en", ("suggest command", "shell suggestion", "safe shell")),
     )
 
     def parse(self, text: str) -> Intent:
@@ -164,10 +173,19 @@ def _extract_args(intent_name: str, text: str) -> dict[str, str | int]:
         "find_images": _extract_image_target,
         "page_summary": _extract_page_url,
         "quick_note": _extract_text_target,
+        "recent_notes": _extract_notes_limit,
+        "pomodoro_timer": _extract_minutes,
         "translate_text": _extract_text_target,
         "todo_list": _extract_todo_target,
         "dictionary": _extract_dictionary_target,
         "timer": _extract_minutes,
+        "zip_files": _extract_zip_target,
+        "copy_path": _extract_path_text_target,
+        "delete_file": _extract_path_text_target,
+        "git_status": _extract_path_text_target,
+        "git_diff": _extract_path_text_target,
+        "json_validator": _extract_json_text,
+        "safe_shell": _extract_text_target,
         "speech_to_text": _extract_prefixed_target,
         "text_to_speech": _extract_prefixed_target,
     }
@@ -247,6 +265,32 @@ def _extract_text_target(text: str) -> dict[str, str]:
     return {"target": _strip_words(text, words)}
 
 
+def _extract_path_text_target(text: str) -> dict[str, str]:
+    """Extract a path-like target."""
+    prefixes = (
+        "copy path",
+        "absolute path",
+        "delete file",
+        "trash file",
+        "git status",
+        "repo status",
+        "git diff",
+        "repo diff",
+    )
+    return {"target": _strip_prefix(text, prefixes)}
+
+
+def _extract_zip_target(text: str) -> dict[str, str]:
+    """Extract a zip source path."""
+    return {"target": _strip_prefix(text, ("zip", "compress"))}
+
+
+def _extract_notes_limit(text: str) -> dict[str, int]:
+    """Extract recent notes limit."""
+    number = re.search(r"\b(\d{1,2})\b", text)
+    return {"limit": int(number.group(1)) if number else 5}
+
+
 def _extract_news_target(text: str) -> dict[str, str]:
     """Extract a news category or feed URL."""
     target = _strip_prefix(text, ("daily news", "news", "headlines", "khabar"))
@@ -257,6 +301,11 @@ def _extract_market_symbol(text: str) -> dict[str, str]:
     """Extract a stock or crypto symbol."""
     target = _strip_words(text, ("stock price", "share price", "stock", "crypto price", "crypto"))
     return {"target": target.upper() or "AAPL"}
+
+
+def _extract_json_text(text: str) -> dict[str, str]:
+    """Extract JSON text for validation."""
+    return {"target": _strip_prefix(text, ("validate json", "json validate", "check json"))}
 
 
 def _extract_video_target(text: str) -> dict[str, str]:

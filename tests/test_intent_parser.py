@@ -81,3 +81,11 @@ def test_parse_web_integration_aliases() -> None:
     assert parser.parse("news technology").name == "daily_news"
     assert parser.parse("youtube atlas assistant").name == "youtube_metadata"
     assert parser.parse("summarize https://example.com").args["target"] == "https://example.com"
+
+
+def test_parse_productivity_coding_aliases() -> None:
+    parser = IntentParser()
+
+    assert parser.parse("zip /tmp/demo").name == "zip_files"
+    assert parser.parse("git status").name == "git_status"
+    assert parser.parse("validate json {}").name == "json_validator"
