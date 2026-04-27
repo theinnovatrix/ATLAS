@@ -60,6 +60,14 @@ class IntentParser:
         ("web_search", "web", "en", ("search", "find online", "look up")),
         ("web_search", "web", "hi", ("search karo", "dhundo", "talash")),
         ("web_search", "web", "ur", ("search karo", "dhundo", "talash")),
+        ("daily_news", "web", "en", ("news", "daily news", "headlines")),
+        ("daily_news", "web", "hi", ("news", "khabar")),
+        ("daily_news", "web", "ur", ("news", "khabar")),
+        ("stock_prices", "web", "en", ("stock", "stock price", "share price")),
+        ("crypto_prices", "web", "en", ("crypto", "crypto price")),
+        ("youtube_metadata", "media", "en", ("youtube", "play video", "video search")),
+        ("find_images", "web", "en", ("image search", "find images", "pictures")),
+        ("page_summary", "web", "en", ("summarize url", "summarize page", "page summary", "summarize")),
         ("quick_note", "productivity", "en", ("note", "remember")),
         ("quick_note", "productivity", "hi", ("note banao", "yaad rakho")),
         ("quick_note", "productivity", "ur", ("note banao", "yaad rakho")),
@@ -149,6 +157,12 @@ def _extract_args(intent_name: str, text: str) -> dict[str, str | int]:
         "calculator": _extract_expression,
         "weather_info": _extract_weather_target,
         "web_search": _extract_text_target,
+        "daily_news": _extract_news_target,
+        "stock_prices": _extract_market_symbol,
+        "crypto_prices": _extract_market_symbol,
+        "youtube_metadata": _extract_video_target,
+        "find_images": _extract_image_target,
+        "page_summary": _extract_page_url,
         "quick_note": _extract_text_target,
         "translate_text": _extract_text_target,
         "todo_list": _extract_todo_target,
@@ -231,6 +245,33 @@ def _extract_text_target(text: str) -> dict[str, str]:
         "bolo",
     )
     return {"target": _strip_words(text, words)}
+
+
+def _extract_news_target(text: str) -> dict[str, str]:
+    """Extract a news category or feed URL."""
+    target = _strip_prefix(text, ("daily news", "news", "headlines", "khabar"))
+    return {"target": target or "general"}
+
+
+def _extract_market_symbol(text: str) -> dict[str, str]:
+    """Extract a stock or crypto symbol."""
+    target = _strip_words(text, ("stock price", "share price", "stock", "crypto price", "crypto"))
+    return {"target": target.upper() or "AAPL"}
+
+
+def _extract_video_target(text: str) -> dict[str, str]:
+    """Extract a YouTube/video query."""
+    return {"target": _strip_prefix(text, ("youtube", "play video", "video search"))}
+
+
+def _extract_image_target(text: str) -> dict[str, str]:
+    """Extract an image search query."""
+    return {"target": _strip_prefix(text, ("image search", "find images", "pictures"))}
+
+
+def _extract_page_url(text: str) -> dict[str, str]:
+    """Extract a URL for public page summarization."""
+    return {"target": _strip_prefix(text, ("summarize url", "summarize page", "page summary", "summarize"))}
 
 
 def _extract_todo_target(text: str) -> dict[str, str]:

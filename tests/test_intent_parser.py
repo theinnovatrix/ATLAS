@@ -73,3 +73,11 @@ def test_parse_system_control_aliases() -> None:
     assert parser.parse("take screenshot").name == "screenshot"
     assert parser.parse("lock screen").name == "lock_screen"
     assert parser.parse("service ssh status").args["target"] == "ssh"
+
+
+def test_parse_web_integration_aliases() -> None:
+    parser = IntentParser()
+
+    assert parser.parse("news technology").name == "daily_news"
+    assert parser.parse("youtube atlas assistant").name == "youtube_metadata"
+    assert parser.parse("summarize https://example.com").args["target"] == "https://example.com"

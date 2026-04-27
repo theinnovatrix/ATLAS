@@ -315,6 +315,45 @@ python -m atlas.cli "service ssh status" --json
 Milestone 4 prepares and validates Linux system commands. Commands that change
 your system still require `--confirm`. See `docs/ATLAS_MILESTONE_4.md`.
 
+## Updating an existing laptop install to Milestone 5
+
+Use this after Milestone 4 is working.
+
+### Step 1: Get the latest Milestone 5 branch
+
+```bash
+cd ~/ATLAS
+git fetch origin
+git checkout Atlasmilestone-5-web-integrations-0f22
+git pull origin Atlasmilestone-5-web-integrations-0f22
+```
+
+Use `git pull origin main` only after the Milestone 5 PR has been merged into
+`main`.
+
+### Step 2: Reinstall and run web tests
+
+```bash
+source .venv/bin/activate
+python -m pip install -e .
+python -m pip install -r requirements-dev.txt
+python -m pytest tests/test_web_integrations.py -q
+```
+
+### Step 3: Try Milestone 5 web commands
+
+```bash
+python -m atlas.cli "weather Delhi"
+python -m atlas.cli "news technology" --json
+python -m atlas.cli "youtube atlas assistant" --json
+python -m atlas.cli "summarize https://example.com" --json
+python -m atlas.cli "stock AAPL" --json
+```
+
+Milestone 5 uses public/free defaults and official API upgrade slots. It does
+not bypass login walls, private backends, or social-platform controls. See
+`docs/ATLAS_MILESTONE_5.md`.
+
 ## Optional providers
 
 Atlas works without paid keys for the current milestone. Later upgrades can use:

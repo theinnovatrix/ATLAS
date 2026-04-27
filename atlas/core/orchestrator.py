@@ -73,6 +73,10 @@ class AtlasOrchestrator:
             "todo_list": self._todo,
             "web_search": self._web_search,
             "weather_info": self._weather,
+            "daily_news": self._news,
+            "youtube_metadata": self._youtube,
+            "page_summary": self._page_summary,
+            "stock_prices": self._stock_prices,
             "tell_joke": self._joke,
             "daily_quote": self._quote,
             "meditation": self._meditation,
@@ -238,6 +242,18 @@ class AtlasOrchestrator:
 
     def _weather(self, intent: Intent) -> AssistantResponse:
         return self.web.weather(str(intent.args.get("target", "London")))
+
+    def _news(self, intent: Intent) -> AssistantResponse:
+        return self.web.daily_news(str(intent.args.get("target", "general")))
+
+    def _youtube(self, intent: Intent) -> AssistantResponse:
+        return self.web.youtube_metadata(str(intent.args.get("target", "")))
+
+    def _page_summary(self, intent: Intent) -> AssistantResponse:
+        return self.web.summarize_public_page(str(intent.args.get("target", "")))
+
+    def _stock_prices(self, intent: Intent) -> AssistantResponse:
+        return self.web.stock_prices(str(intent.args.get("target", "")))
 
     def _joke(self, intent: Intent) -> AssistantResponse:
         return self.web.tell_joke()

@@ -54,3 +54,10 @@ def test_system_dependencies_route_is_available():
     assert response.ok is True
     assert response.intent == "system_diagnostics"
     assert "amixer" in response.data["commands"]
+
+
+def test_news_route_returns_structured_response():
+    response = AtlasOrchestrator().execute_text("news")
+
+    assert response.intent == "daily_news"
+    assert "articles" in response.data
