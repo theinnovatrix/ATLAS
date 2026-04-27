@@ -13,6 +13,8 @@ offline default providers, and upgrade hooks for paid AI and voice services.
 - Free-first providers by default: local rules for intent parsing, `pyttsx3` or
   Piper for TTS, Faster-Whisper for offline speech-to-text, and optional Groq,
   OpenAI, ElevenLabs, Azure, or Google provider slots for later upgrades.
+- Voice I/O diagnostics and optional adapters for audio recording, file
+  transcription, and text-to-speech provider selection.
 
 ## Full step-by-step setup
 
@@ -107,6 +109,8 @@ python -m atlas.cli "system info"
 python -m atlas.cli "Delhi ka mausam batao"
 python -m atlas.cli "calculate 12 * 8"
 python -m atlas.cli "translate hello"
+python -m atlas.cli "voice status"
+python -m atlas.cli "say hello Atlas"
 python -m atlas.cli "volume 30"
 ```
 
@@ -124,6 +128,18 @@ atlas "what can you do"
 
 Atlas is currently a text-command foundation. Full microphone listening, GUI,
 screen recording, and deeper desktop automation are planned follow-up milestones.
+Voice diagnostics are available now; real microphone recording and speech
+playback require optional Linux audio tools and Python packages.
+
+## Developer test setup
+
+Use this if you want to run the automated checks:
+
+```bash
+source .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
+```
 
 ## Developer test setup
 

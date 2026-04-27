@@ -31,6 +31,26 @@ def test_extract_calculator_expression() -> None:
     assert intent.args["expression"] == "2 + 3 * 4"
 
 
+def test_parse_voice_status() -> None:
+    intent = IntentParser().parse("voice status")
+
+    assert intent.name == "voice_status"
+
+
+def test_parse_tts_speak_target() -> None:
+    intent = IntentParser().parse("say hello atlas")
+
+    assert intent.name == "text_to_speech"
+    assert intent.args["target"] == "hello atlas"
+
+
+def test_parse_transcribe_target() -> None:
+    intent = IntentParser().parse("transcribe /tmp/audio.wav")
+
+    assert intent.name == "speech_to_text"
+    assert intent.args["target"] == "/tmp/audio.wav"
+
+
 def test_unknown_intent() -> None:
     intent = IntentParser().parse("make the moon blue")
 

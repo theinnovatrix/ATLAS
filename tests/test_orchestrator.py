@@ -37,3 +37,10 @@ def test_capabilities_lists_registered_features():
     assert response.ok is True
     assert response.data["registered"] >= 100
     assert response.data["implemented"] >= 20
+
+
+def test_voice_status_command_reports_diagnostics():
+    response = AtlasOrchestrator().execute_text("voice status")
+    assert response.ok is True
+    assert response.intent == "voice_status"
+    assert "audio" in response.data
