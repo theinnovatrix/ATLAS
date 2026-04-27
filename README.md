@@ -14,33 +14,92 @@ offline default providers, and upgrade hooks for paid AI and voice services.
   Piper for TTS, Faster-Whisper for offline speech-to-text, and optional Groq,
   OpenAI, ElevenLabs, Azure, or Google provider slots for later upgrades.
 
-## Install and run
+## Full step-by-step setup
 
-Use these commands from the project root.
+These steps are for Ubuntu, Debian, or Parrot OS.
 
-On Ubuntu, Debian, or Parrot OS, install the Python virtual-environment package
-first if `python3 -m venv .venv` fails:
+### Step 1: Download the project ZIP
+
+1. Open the Atlas GitHub repository in your browser.
+2. Click `Code`.
+3. Click `Download ZIP`.
+4. Save the ZIP file to your `Downloads` folder.
+
+If you prefer Git, you can clone instead:
+
+```bash
+git clone https://github.com/theinnovatrix/ATLAS.git
+```
+
+### Step 2: Extract the ZIP
+
+If you downloaded the ZIP, extract it with your file manager or run:
+
+```bash
+cd ~/Downloads
+unzip ATLAS-main.zip
+cd ATLAS-main
+```
+
+If the folder has a different name, `cd` into that extracted folder instead.
+
+If you cloned with Git, run:
+
+```bash
+cd ATLAS
+```
+
+### Step 3: Install Linux setup tools
+
+Run:
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y python3-venv
+sudo apt-get install -y python3 python3-pip python3-venv
 ```
+
+If your system uses Python 3.12 and `python3-venv` is not enough, run:
+
+```bash
+sudo apt-get install -y python3.12-venv
+```
+
+### Step 4: Create a virtual environment
 
 ```bash
 python3 -m venv .venv
+```
+
+### Step 5: Activate the virtual environment
+
+Run this every time you open a new terminal for Atlas:
+
+```bash
 source .venv/bin/activate
-pip install -e .
+```
+
+Your terminal should now show `(.venv)` near the prompt.
+
+### Step 6: Install Atlas
+
+Install Atlas in editable mode:
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install -e .
+```
+
+### Step 7: Run Atlas for the first time
+
+Run:
+
+```bash
 python -m atlas.cli "system info"
 ```
 
-You can also install the test/dev tools:
+You should see a system summary from Atlas.
 
-```bash
-pip install -r requirements-dev.txt
-python -m pytest -q
-```
-
-## Example commands
+### Step 8: Try basic commands
 
 ```bash
 python -m atlas.cli "what can you do"
@@ -57,8 +116,24 @@ Commands that can change the system require confirmation. For example:
 python -m atlas.cli "volume 30" --confirm
 ```
 
+After `python -m pip install -e .`, this shortcut also works:
+
+```bash
+atlas "what can you do"
+```
+
 Atlas is currently a text-command foundation. Full microphone listening, GUI,
 screen recording, and deeper desktop automation are planned follow-up milestones.
+
+## Developer test setup
+
+Use this if you want to run the automated checks:
+
+```bash
+source .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
+```
 
 ## Optional providers
 
@@ -72,11 +147,48 @@ Atlas works without paid keys for the current milestone. Later upgrades can use:
 Set keys only in your shell or a local ignored environment file, never in source
 code.
 
-## Development workflow
+Example:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements-dev.txt
-python -m pytest -q
+export GROQ_API_KEY="your_key_here"
+export OPENROUTER_API_KEY="your_key_here"
+export ELEVENLABS_API_KEY="your_key_here"
+export SERPAPI_API_KEY="your_key_here"
 ```
+
+## Troubleshooting
+
+### `python3 -m venv .venv` fails
+
+Install venv support:
+
+```bash
+sudo apt-get install -y python3-venv
+```
+
+For Python 3.12:
+
+```bash
+sudo apt-get install -y python3.12-venv
+```
+
+### `ModuleNotFoundError: No module named 'atlas'`
+
+Activate the virtual environment and reinstall Atlas:
+
+```bash
+source .venv/bin/activate
+python -m pip install -e .
+```
+
+### `pytest` is not found
+
+Install developer tools:
+
+```bash
+python -m pip install -r requirements-dev.txt
+```
+
+### System commands ask for confirmation
+
+That is expected. Atlas blocks risky actions unless you add `--confirm`.
